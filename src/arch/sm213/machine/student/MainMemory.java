@@ -27,8 +27,7 @@ public class MainMemory extends AbstractMainMemory {
    * @return true iff address is aligned to length.
    */
   @Override public boolean isAccessAligned (int address, int length) {
-    // TODO
-    return false;
+    return address % length == 0;
   }
   
   /**
@@ -40,8 +39,14 @@ public class MainMemory extends AbstractMainMemory {
    * @return Big Endian integer formed by these four bytes.
    */
   @Override public int bytesToInteger (byte byteAtAddrPlus0, byte byteAtAddrPlus1, byte byteAtAddrPlus2, byte byteAtAddrPlus3) {
-    // TODO
-    return 0;
+    byte[] arr = {byteAtAddrPlus0, byteAtAddrPlus1, byteAtAddrPlus2, byteAtAddrPlus3};
+
+    int value = 0;
+
+    for (int i = 0; i < 4; i++) {
+      value = value + (((int) arr[i] << (24 - i*8)) & (0x000000ff << (24 - i*8)));
+    }
+    return value;
   }
   
   /**
@@ -50,8 +55,12 @@ public class MainMemory extends AbstractMainMemory {
    * @return an array of byte where [0] is value of low-address byte of the number etc.
    */
   @Override public byte[] integerToBytes (int i) {
-    // TODO
-    return null;
+    byte byte1 = (byte) ((i & 0xff000000) >> 24);
+    byte byte2 = (byte) ((i & 0x00ff0000) >>16);
+    byte byte3 = (byte) ((i & 0x0000ff00) >> 8);
+    byte byte4 = (byte) ((i & 0x000000ff));
+    byte[] arr = {byte1, byte2, byte3, byte4};
+    return arr;
   }
   
   /**
@@ -62,8 +71,17 @@ public class MainMemory extends AbstractMainMemory {
    * @return an array of byte where [0] is memory value at address, [1] is memory value at address+1 etc.
    */
   @Override public byte[] get (int address, int length) throws InvalidAddressException {
-    // TODO
-    return null;
+    if (!this.isAccessAligned(address, length) || address + length - 1 > this.length() - 1 || address < 0) {
+      throw new InvalidAddressException();
+    }
+
+    byte[] arr = new byte[length];
+
+    for (int i = 0; i < length; i++) {
+      arr[i] = this.mem[address + i];
+    }
+
+    return arr;
   }
   
   /**
@@ -73,7 +91,14 @@ public class MainMemory extends AbstractMainMemory {
    * @throws InvalidAddressException  if any address in the range address to address+value.length-1 is invalid.
    */
   @Override public void set (int address, byte[] value) throws InvalidAddressException {
-    // TODO
+      if (!this.isAccessAligned(address, value.length) || address + value.length - 1 > this.length() - 1 || address < 0) {
+        throw new InvalidAddressException();
+      }
+
+      for (byte b : value) {
+        this.mem[address] = b;
+        address ++;
+    }
   }
   
   /**
