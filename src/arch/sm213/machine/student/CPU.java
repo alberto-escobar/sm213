@@ -83,10 +83,10 @@ public class CPU extends AbstractSM213CPU {
                 reg.set (insOp0.get(), insOpExt.get());
                 break;
             case 0x1: // ld o(rs), rd .......... 1psd  (p = o / 4)
-                reg.set (insOp2.get(), mem.readInteger(reg.get(insOp1.get()) + 4*insOp0.get()));
+                reg.set (insOp2.get(), mem.readInteger ((insOp0.get() << 2) + reg.get (insOp1.get())));
                 break;
             case 0x2: // ld (rs, ri, 4), rd .... 2sid
-                reg.set (insOp2.get(), mem.readInteger(reg.get(insOp0.get()) + 4*reg.get(insOp1.get())));
+                reg.set (insOp2.get(), mem.readInteger(reg.get(insOp0.get()) + (reg.get(insOp1.get()) << 2)));
                 break;
             case 0x3: // st rs, o(rd) .......... 3spd  (p = o / 4)
                 mem.writeInteger((reg.get(insOp2.get()) + 4*insOp1.get()),reg.get(insOp0.get()));
@@ -100,10 +100,10 @@ public class CPU extends AbstractSM213CPU {
                         reg.set (insOp2.get(), reg.get(insOp1.get()));
                         break;
                     case 0x1: // add rs, rd ........ 61sd
-                        reg.set (insOp2.get(), reg.get(insOp1.get()) + reg.get(insOp1.get()));
+                        reg.set (insOp2.get(), reg.get(insOp1.get()) + reg.get(insOp2.get()));
                         break;
                     case 0x2: // and rs, rd ........ 62sd
-                        reg.set (insOp2.get(), reg.get(insOp1.get()) & reg.get(insOp1.get()));
+                        reg.set (insOp2.get(), reg.get(insOp1.get()) & reg.get(insOp2.get()));
                         break;
                     case 0x3: // inc rr ............ 63-r
                         reg.set (insOp2.get(), reg.get(insOp2.get()) + 1);
@@ -125,13 +125,12 @@ public class CPU extends AbstractSM213CPU {
                 }
                 break;
             case 0x7: // sh? $i,rd ............. 7dii
-                if ((insOp1.get() & 0b1000) == 0b0000 )  {
-                    int shift = insOp1.get() << 4 + insOp2.get();
-                    reg.set (insOp0.get(), reg.get(insOp0.get()) << shift);
-                } else if ((insOp1.get() & 0b1000) == 0b1000 ) {
-                    int shift = insOp1.get() << 4 + insOp2.get();
-                    shift = ~shift + 1;
-                    reg.set (insOp0.get(), reg.get(insOp0.get()) >>> shift);
+                if (insOpImm.get() > 0) {
+                    // shl $i,rd ............. 7dii
+                    reg.set (insOp0.get(), reg.get(insOp0.get()) << insOpImm.get());
+                } else {
+                    // shr $i,rd ............. 7dii
+                    reg.set (insOp0.get(), reg.get(insOp0.get()) >> (~(insOpImm.get())+1));
                 }
                 break;
             case 0xf: // halt or nop ............. f?--
